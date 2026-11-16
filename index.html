@@ -53,7 +53,9 @@
   .toast.on{opacity:1}
 
   /* ---------- KHUNG ẢNH ---------- */
-  #card{width:640px;flex:none;background:#fff;color:var(--ink);font-size:20px;line-height:1.4;box-shadow:0 6px 24px rgba(10,30,70,.18)}
+  #card{width:640px;flex:none;color:var(--ink);font-size:20px;line-height:1.4}
+  .pg{background:#fff;box-shadow:0 6px 24px rgba(10,30,70,.18)}
+  .pg + .pg{margin-top:22px}
   .k-head{background:linear-gradient(135deg,#072a63 0%,#0f4aa5 100%);color:#fff;padding:26px 28px 22px;border-bottom:6px solid var(--red)}
   .k-brand{font-size:17px;font-weight:700;letter-spacing:.06em;opacity:.92}
   .k-title{font-size:33px;font-weight:800;line-height:1.18;margin:8px 0 8px}
@@ -177,6 +179,7 @@
         <div><label>Xưng hô với khách</label>
           <select id="gender"><option value="">Anh/chị (chưa rõ)</option><option value="anh">Anh</option><option value="chi">Chị</option></select></div>
       </div>
+      <label class="chk"><input type="checkbox" id="split"> <span><b>Tách thành 2 ảnh ngắn</b> <span class="hint">(ảnh 1: phí, ảnh 2: quyền lợi; gửi Messenger/Zalo nét hơn ảnh dài)</span></span></label>
       <div style="margin-top:8px"><label>So sánh phí mỗi ngày với</label><input type="text" id="compare"></div>
       <div style="margin-top:8px"><label>Ghi chú thêm trên ảnh (không bắt buộc)</label><input type="text" id="extraNote" placeholder="Ví dụ: Ưu đãi áp dụng đến hết tháng 11"></div>
     </div>
@@ -196,6 +199,7 @@
           <button class="btn share" id="btnShare">📲 GỬI NGAY QUA MESSENGER / ZALO</button>
           <button class="btn primary" id="btnPng">⬇ Tải Ảnh Báo Phí (.PNG)</button>
           <button class="btn" id="btnCopyImg">📋 Copy Ảnh vào bộ nhớ tạm</button>
+          <button class="btn" id="btnCopyImg2">📋 Copy Ảnh 2 (quyền lợi)</button>
           <div class="row c2">
             <div><label>Độ nét ảnh</label><select id="scale"><option value="3">x3 (nét nhất, 1920px)</option><option value="2">x2 (nhẹ hơn, 1280px)</option></select></div>
             <div><label>Số in đậm trong tin</label><select id="boldMode"><option value="uni">Chữ số đậm (hiện mọi nơi)</option><option value="star">**dấu sao**</option><option value="none">Không in đậm</option></select></div>
@@ -275,7 +279,7 @@ function loadFees(){
 function feesEdited(){return JSON.stringify(FEES)!==JSON.stringify(DEFAULT_FEES);}
 function defState(){
   return {members:[newMember("Mẹ","year",1990),newMember("Bé","year",2020)],
-    discOn:true,discPct:15,discKid:"",discExtra:false,totalMode:"both",gender:"",compare:"",extraNote:"",scale:"3",boldMode:"uni",ver:2};
+    discOn:true,discPct:15,discKid:"",discExtra:false,totalMode:"both",gender:"",compare:"",extraNote:"",scale:"3",boldMode:"uni",split:true,ver:2};
 }
 function newMember(name,kind,val){return {name:name||"",kind:kind||"year",val:val==null?"":val,pkg:0,indep:false,nha:false,thai:false,oNoi:"",oCombo:""};}
 function loadState(){
@@ -403,7 +407,7 @@ $("btnClear").onclick=()=>{ if(!confirm("Xóa hết thành viên để nhập kh
   S.members=[newMember("","year","")]; S.extraNote=""; $("extraNote").value=""; renderMembers(); update(); };
 
 /* Cài đặt chung */
-const GLOBALS=["discOn","discPct","discKid","discExtra","totalMode","gender","compare","extraNote","scale","boldMode"];
+const GLOBALS=["discOn","discPct","discKid","discExtra","totalMode","gender","compare","extraNote","scale","boldMode","split"];
 function defaultCompare(){return S.gender==="anh"?"một ly cà phê":S.gender==="chi"?"một ly trà sữa":"một ly đồ uống quen thuộc";}
 function fillGlobals(){GLOBALS.forEach(k=>{const el=$(k); if(el.type==="checkbox") el.checked=!!S[k]; else el.value=S[k];}); if(!S.compare){S.compare=defaultCompare(); $("compare").value=S.compare;}}
 GLOBALS.forEach(k=>{$(k).addEventListener("input",e=>{
@@ -422,14 +426,17 @@ function fitPreview(){ // điện thoại: thu nhỏ khung xem trước cho vừ
   wrap.style.height=k<1?(card.offsetHeight*k)+"px":"";
 }
 window.addEventListener("resize",()=>fitPreview());
-function update(){ save(); renderCard(); fitPreview(); buildMsg(); invalidate();$("feeState").textContent=feesEdited()?"Đang dùng biểu phí anh đã sửa và lưu trên máy này.":"Đang dùng biểu phí chuẩn nạp sẵn trong công cụ."; }
+function update(){ save(); renderCard(); fitPreview(); buildMsg(); invalidate();
+  $("btnCopyImg").textContent=S.split?"📋 Copy Ảnh 1 (bảng phí)":"📋 Copy Ảnh vào bộ nhớ tạm";
+  $("btnCopyImg2").style.display=S.split?"":"none";
+  $("feeState").textContent=feesEdited()?"Đang dùng biểu phí anh đã sửa và lưu trên máy này.":"Đang dùng biểu phí chuẩn nạp sẵn trong công cụ."; }
 
 function rows(){return S.members.map(m=>({m,r:calc(m)})).filter(x=>x.r.ok);}
 function label(m,i){return m.name.trim()||("Thành viên "+(i+1));}
 
 function renderCard(){
   const R=rows(), card=$("card");
-  if(!R.length){card.innerHTML=`<div class="k-head"><div class="k-brand">BẢO HIỂM QUÂN ĐỘI · MIC</div><div class="k-title">PHƯƠNG ÁN BẢO HIỂM SỨC KHỎE MIC CARE</div></div><div class="k-sec" style="padding-bottom:30px">Nhập năm sinh hoặc tuổi của thành viên ở bảng bên trái để xem báo phí.</div>`;return;}
+  if(!R.length){card.innerHTML=`<div class="pg"><div class="k-head"><div class="k-brand">BẢO HIỂM QUÂN ĐỘI · MIC</div><div class="k-title">PHƯƠNG ÁN BẢO HIỂM SỨC KHỎE MIC CARE</div></div><div class="k-sec" style="padding-bottom:30px">Nhập năm sinh hoặc tuổi của thành viên ở bảng nhập để xem báo phí.</div></div>`;return;}
   const n=R.length, tNoi=R.reduce((s,x)=>s+x.r.noi,0), tCombo=R.reduce((s,x)=>s+x.r.combo,0);
   const who=n>1?"cho cả gia đình":"mỗi ngày";
   const anyExtra=[...new Set(R.flatMap(x=>x.r.extras))];
@@ -479,23 +486,28 @@ function renderCard(){
   if(S.extraNote.trim()) notes+=`<li><i>📌</i>${esc(S.extraNote.trim())}</li>`;
   notes+=`<li><i>ℹ️</i>Phí mang tính tham khảo tại ngày báo phí.</li>`;
 
-  card.innerHTML=`
-    <div class="k-head"><div class="k-brand">BẢO HIỂM QUÂN ĐỘI · MIC</div>
+  const head1=`<div class="k-head"><div class="k-brand">BẢO HIỂM QUÂN ĐỘI · MIC</div>
       <div class="k-title">PHƯƠNG ÁN BẢO HIỂM SỨC KHỎE MIC CARE</div>
       <div class="k-sub">Bảo vệ toàn diện - An tâm viện phí cho cả gia đình</div>
-      <div class="k-date">Ngày báo phí: ${today}</div></div>
-    <div class="k-sec"><div class="k-h">Thành viên tham gia</div><div class="k-mems">${mems}</div></div>
+      <div class="k-date">Ngày báo phí: ${today}</div></div>`;
+  const head2=`<div class="k-head"><div class="k-brand">BẢO HIỂM QUÂN ĐỘI · MIC</div>
+      <div class="k-title" style="font-size:29px">QUYỀN LỢI &amp; LƯU Ý · MIC CARE</div>
+      <div class="k-date">Kèm theo bảng báo phí ngày ${today}</div></div>`;
+  const partA=`<div class="k-sec"><div class="k-h">Thành viên tham gia</div><div class="k-mems">${mems}</div></div>
     <div class="k-sec"><div class="k-h">Phí từng người (đồng/năm)</div>
       <table class="k-t"><thead><tr><th>Thành viên &amp; Gói</th><th>Chỉ Nội trú</th><th>${comboLb}</th></tr></thead>
       <tbody>${feeRows}${n>1?`<tr class="sum"><td>Tổng ${n} người</td><td>${vnd(tNoi)}đ</td><td>${vnd(tCombo)}đ</td></tr>`:""}</tbody></table></div>
-    <div class="k-total">${totals}</div>
-    <div class="k-sec"><div class="k-h">Quyền lợi chính của mỗi người</div>
+    <div class="k-total">${totals}</div>`;
+  const partB=`<div class="k-sec"><div class="k-h">Quyền lợi chính của mỗi người</div>
       <table class="k-t k-b"><thead><tr><th>Quyền lợi (tối đa)</th>${pk.map(p=>`<th>Gói ${PKGS[p]}</th>`).join("")}</tr></thead><tbody>${ben}</tbody></table></div>
-    <div class="k-sec"><div class="k-h">Lưu ý</div><ul class="k-notes">${notes}</ul></div>
-    <div class="k-foot"><div class="nm">Chuyên viên tư vấn: Nguyễn Thanh Thiên</div>
+    <div class="k-sec"><div class="k-h">Lưu ý</div><ul class="k-notes">${notes}</ul></div>`;
+  const foot=`<div class="k-foot"><div class="nm">Chuyên viên tư vấn: Nguyễn Thanh Thiên</div>
       <div>Mã TVV: M005192</div>
       <div>Bảo hiểm Quân đội (MIC) Đà Nẵng<br>161 Nguyễn Văn Linh, Hải Châu, Đà Nẵng</div>
       <div class="tel">☎ Điện thoại / Zalo hỗ trợ bồi thường 24/7: 0774.036.810</div></div>`;
+  card.innerHTML=S.split
+    ? `<div class="pg">${head1}${partA}${foot}</div><div class="pg">${head2}${partB}${foot}</div>`
+    : `<div class="pg">${head1}${partA}${partB}${foot}</div>`;
 }
 
 /* ================= TIN NHẮN ================= */
@@ -554,18 +566,25 @@ $("mCopy").onclick=onlyCopyText;
 /* ================= XUẤT ẢNH ================= */
 function toast(s){const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),2600);}
 /* Ảnh luôn chụp ở khổ chuẩn 640px (x2 = 1280px, x3 = 1920px), không phụ thuộc màn hình đang xem */
+async function shootOne(el){
+  const h=el.offsetHeight;
+  let sc=+S.scale||3; const maxSc=Math.sqrt(15e6/(CARD_W*h));   // tránh vượt giới hạn canvas của điện thoại
+  if(sc>maxSc) sc=Math.max(1,Math.floor(maxSc*10)/10);
+  return html2canvas(el,{scale:sc,width:CARD_W,windowWidth:1200,backgroundColor:"#ffffff",useCORS:true,logging:false,
+    onclone:d=>{
+      const c=d.getElementById("card"), w=d.getElementById("cardWrap");
+      c.style.transform="none"; c.style.width=CARD_W+"px";
+      w.style.width=CARD_W+"px"; w.style.height="auto"; w.style.overflow="visible"; w.style.margin="0";
+      d.querySelectorAll("#card .pg").forEach(p=>{p.style.boxShadow="none";});
+    }});
+}
+/* Trả về danh sách ảnh: 1 ảnh dài, hoặc 2 ảnh ngắn khi bật "Tách thành 2 ảnh" */
 async function shoot(){
   if(typeof html2canvas==="undefined") throw new Error("Chưa tải được thư viện html2canvas, kiểm tra kết nối mạng rồi mở lại.");
   if(!rows().length) throw new Error("Chưa có thành viên hợp lệ để xuất ảnh.");
-  const card=$("card"), h=card.offsetHeight;
-  let sc=+S.scale||2; const maxSc=Math.sqrt(15e6/(CARD_W*h));   // tránh vượt giới hạn canvas của điện thoại
-  if(sc>maxSc) sc=Math.max(1,Math.floor(maxSc*10)/10);
-  return html2canvas(card,{scale:sc,width:CARD_W,windowWidth:1200,backgroundColor:"#ffffff",useCORS:true,logging:false,
-    onclone:d=>{
-      const c=d.getElementById("card"), w=d.getElementById("cardWrap");
-      c.style.transform="none"; c.style.boxShadow="none"; c.style.width=CARD_W+"px";
-      w.style.width=CARD_W+"px"; w.style.height="auto"; w.style.overflow="visible"; w.style.margin="0";
-    }});
+  const out=[];
+  for(const el of $("card").querySelectorAll(".pg")){ const c=await shootOne(el); out.push({blob:await toBlob(c),w:c.width,h:c.height}); }
+  return out;
 }
 const toBlob=c=>new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error("Không tạo được ảnh, anh thử độ nét x2.")),"image/png"));
 
@@ -579,26 +598,34 @@ function getShot(){
   if(shot) return Promise.resolve(shot);
   if(shotBusy) return shotBusy;
   const ver=shotVer;
-  const p=(async()=>{ const c=await shoot(), b=await toBlob(c), r={blob:b,w:c.width,h:c.height}; if(ver===shotVer) shot=r; return r; })();
+  const p=(async()=>{ const r=await shoot(); if(ver===shotVer) shot=r; return r; })();
   shotBusy=p; p.then(()=>{},()=>{}).then(()=>{ if(shotBusy===p) shotBusy=null; });
   return p;
 }
-function download(blob){
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function download(blob,suffix){
   const d=new Date(), p=x=>String(x).padStart(2,"0"), a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=`bao-phi-mic-care-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.png`;
+  a.download=`bao-phi-mic-care-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${suffix||""}.png`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 }
+async function downloadAll(r){
+  for(let i=0;i<r.length;i++){ download(r[i].blob, r.length>1?"-"+(i+1):""); if(i<r.length-1) await wait(500); }
+}
 $("btnPng").onclick=async()=>{
-  try{ const r=await getShot(); download(r.blob); toast(`Đã tải ảnh ${r.w}×${r.h}px`); }catch(e){toast(e.message);}
+  try{ const r=await getShot(); await downloadAll(r);
+    toast(r.length>1?`Đã tải ${r.length} ảnh (${r.map(x=>x.w+"×"+x.h).join(", ")}px)`:`Đã tải ảnh ${r[0].w}×${r[0].h}px`);
+  }catch(e){toast(e.message);}
 };
-$("btnCopyImg").onclick=async()=>{
+async function copyImg(i){
   try{
-    const r=await getShot();
+    const r=await getShot(); if(!r[i]) throw new Error("Không có ảnh này.");
     if(!navigator.clipboard||!window.ClipboardItem) throw new Error("Trình duyệt này không cho copy ảnh, anh dùng nút Tải Ảnh nhé.");
-    await navigator.clipboard.write([new ClipboardItem({"image/png":r.blob})]);
-    toast("Đã copy ảnh, dán vào ô chat (Ctrl+V)");
+    await navigator.clipboard.write([new ClipboardItem({"image/png":r[i].blob})]);
+    toast(r.length>1?`Đã copy ảnh ${i+1}, dán vào ô chat (Ctrl+V)`:"Đã copy ảnh, dán vào ô chat (Ctrl+V)");
   }catch(e){toast(e.message||"Không copy được ảnh, anh dùng nút Tải Ảnh nhé.");}
-};
+}
+$("btnCopyImg").onclick=()=>copyImg(0);
+$("btnCopyImg2").onclick=()=>copyImg(1);
 
 /* Gửi ngay: copy lời tư vấn, rồi mở khay chia sẻ của điện thoại kèm ảnh */
 async function shareNow(){
@@ -607,11 +634,11 @@ async function shareNow(){
   const copied=copyText(text);                 // gọi ngay trong lúc bấm nút
   try{
     let r=shot; if(!r){ toast("Đang tạo ảnh…"); r=await getShot(); }
-    const file=new File([r.blob],"bao-phi-mic-care.png",{type:"image/png"});
-    const canShare=IS_MOBILE&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]});
+    const files=r.map((x,i)=>new File([x.blob],r.length>1?`bao-phi-mic-care-${i+1}.png`:"bao-phi-mic-care.png",{type:"image/png"}));
+    const canShare=IS_MOBILE&&navigator.share&&navigator.canShare&&navigator.canShare({files});
     if(canShare){
       toast("Đã tự động copy lời tư vấn! Hãy chọn Messenger/Zalo để gửi ảnh rồi Dán (Paste) chữ");
-      try{ await navigator.share({files:[file],title:"Báo phí MIC Care",text}); }
+      try{ await navigator.share({files,title:"Báo phí MIC Care",text}); }
       catch(e){
         if(e&&e.name==="AbortError") return;
         if(e&&e.name==="NotAllowedError"){toast("Ảnh đã sẵn sàng, anh bấm nút Gửi thêm một lần nữa nhé.");return;}
@@ -619,7 +646,7 @@ async function shareNow(){
       }
       return;
     }
-    await copied; download(r.blob);
+    await copied; await downloadAll(r);
     toast("Đã copy lời tư vấn và tải ảnh về máy. Gửi ảnh rồi Dán (Paste) chữ nhé.");
   }catch(e){toast((e&&e.message)||"Không gửi được, anh thử nút Tải Ảnh.");}
 }
