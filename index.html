@@ -197,7 +197,7 @@
           <button class="btn primary" id="btnPng">⬇ Tải Ảnh Báo Phí (.PNG)</button>
           <button class="btn" id="btnCopyImg">📋 Copy Ảnh vào bộ nhớ tạm</button>
           <div class="row c2">
-            <div><label>Độ nét ảnh</label><select id="scale"><option value="2">x2 (nhẹ, gửi nhanh)</option><option value="3">x3 (nét nhất)</option></select></div>
+            <div><label>Độ nét ảnh</label><select id="scale"><option value="3">x3 (nét nhất, 1920px)</option><option value="2">x2 (nhẹ hơn, 1280px)</option></select></div>
             <div><label>Số in đậm trong tin</label><select id="boldMode"><option value="uni">Chữ số đậm (hiện mọi nơi)</option><option value="star">**dấu sao**</option><option value="none">Không in đậm</option></select></div>
           </div>
         </div>
@@ -275,11 +275,11 @@ function loadFees(){
 function feesEdited(){return JSON.stringify(FEES)!==JSON.stringify(DEFAULT_FEES);}
 function defState(){
   return {members:[newMember("Mẹ","year",1990),newMember("Bé","year",2020)],
-    discOn:true,discPct:15,discKid:"",discExtra:false,totalMode:"both",gender:"",compare:"",extraNote:"",scale:"2",boldMode:"uni"};
+    discOn:true,discPct:15,discKid:"",discExtra:false,totalMode:"both",gender:"",compare:"",extraNote:"",scale:"3",boldMode:"uni",ver:2};
 }
 function newMember(name,kind,val){return {name:name||"",kind:kind||"year",val:val==null?"":val,pkg:0,indep:false,nha:false,thai:false,oNoi:"",oCombo:""};}
 function loadState(){
-  try{const r=JSON.parse(localStorage.getItem(STATE_KEY)); if(r&&Array.isArray(r.members)) return Object.assign(defState(),r);}catch(e){}
+  try{const r=JSON.parse(localStorage.getItem(STATE_KEY)); if(r&&Array.isArray(r.members)){ if(!r.ver){r.scale="3";r.ver=2;} return Object.assign(defState(),r);} }catch(e){}
   return defState();
 }
 function save(){try{localStorage.setItem(STATE_KEY,JSON.stringify(S));}catch(e){}}
